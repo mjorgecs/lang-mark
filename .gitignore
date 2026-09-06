@@ -5,6 +5,4 @@ env/
 venv/
 
 
-# Example files
-
 .DS_Store
