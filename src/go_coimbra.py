@@ -5,9 +5,6 @@ from langchain_chroma import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
-from typing import List
-from typing_extensions import TypedDict
-
 
 PDF_PATH = "../docs/do_coimbra/700-maiores-empresas-coimbra-2025-extended.pdf"
 COLLECTIONS_PATH = "../collections"
@@ -94,59 +91,3 @@ retriever = vectorstore.as_retriever(
 
 
 
-### LLMs-------------------------------------------
-# Data model
-class GraphState(TypedDict):
-  """
-  Represents the state of our graph.
-
-  Attributes:
-    question: question
-    generation: LLM generation
-    documents: list of documents
-  """
-
-  question: str
-  generation: str
-  documents: List[str]
-
-
-# Nodes-------------------------------------------
-def retrieve(state):
-  """
-  Retrieve documents
-
-  Args:
-    state (dict): The current graph state
-
-  Returns:
-    state (dict): New key added to state, documents, that contains retrieved documents
-  """
-
-  print("--RETRIEVE--")
-  question = state["question"]
-
-  # Retrieval
-  documents = retriever.invoke(question)
-  return {"documents": documents, "question": question}
-
-
-def grade_documents(state):
-  """
-  Determines wether the retrieved documents are relevant to the question.
-
-  Args:
-    state (dict): The current graph state
-
-  Returns:
-    state (dict): Updates documents key with only filtered relevant documents
-  """
-
-  print("---CHECK DUCUMENT RELEVANCE TO QUESTION---")
-  question = state["question"]
-  documents = state["documents"]
-
-  # Score each document
-  filtered_docs = []
-  for d in documents:
-    score = retrive
