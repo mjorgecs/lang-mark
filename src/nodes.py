@@ -19,7 +19,7 @@ class GraphState(TypedDict):
   documents: List[str]
 
 
-def retrieve(llm, state):
+def retrieve(retriever, state):
   """
   Retrieve documents
 
@@ -32,9 +32,8 @@ def retrieve(llm, state):
 
   print("--RETRIEVE--")
   question = state["question"]
-  ret = retriever(llm)
 
-  documents = ret.invoke(question)
+  documents = retriever.invoke(question)
 
   return {"documents": documents, "question": question}
 
