@@ -1,6 +1,6 @@
 from typing import List
 from typing_extensions import TypedDict
-from routes import retriever, rag_chain, retrieval_grader, question_rewriter
+from routes import rag_chain, retrieval_grader, question_rewriter
 
 
 # Data model

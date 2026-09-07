@@ -1,7 +1,6 @@
-from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 ### Retrieval Grader-------------------------------------------
@@ -13,7 +12,7 @@ class GradeDocuments(BaseModel):
     description="Documents are relevant to the question, 'yes' or 'no'"
   )
 
-def retrievel_grader(llm):
+def retrieval_grader(llm):
   structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
   # Prompt
@@ -35,10 +34,15 @@ def retrievel_grader(llm):
 ### Generate-------------------------------------------
 # Prompt
 def rag_chain(llm):
-  prompt = hub.pull("rlm/rag-prompt")
+  prompt = ChatPromptTemplate.from_messages([
+    ("human",
+     "You are an assistant for question-answering tasks. Use the following pieces of "
+     "retrieved context to answer the question. If you don't know the answer, just say "
+     "that you don't know. Use three sentences maximum and keep the answer concise.\n"
+     "Question: {question}\nContext: {context}\nAnswer:"),
+  ])
 
-  # Chain
-  return prompt | llm | StrOutputParser()
+  return prompt | llm | StrOutputParser
 
 
 ### Hallucination Grader-------------------------------------------
