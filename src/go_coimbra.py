@@ -30,9 +30,9 @@ embeddings = GoogleGenerativeAIEmbeddings(
 )
 
 llm = ChatGoogleGenerativeAI(
-  model= "gemini-3.7-flash",
+  model= "gemini-3.6-flash",
   temperature = 0,
-  max_retries = 2,
+  max_retries = 0,
 )
 
 
