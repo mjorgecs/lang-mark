@@ -1,8 +1,11 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from pprint import pprint
 from functools import partial
 from pathlib import Path
-from dotenv import load_dotenv
 from typing import List
 from langchain_chroma import Chroma
 from langgraph.graph import END, StateGraph, START
@@ -21,21 +24,15 @@ COLLECTIONS_PATH = Path(__file__).parent.parent / "collections"
 
 ### SETUP
 
-# Load .env info
-load_dotenv()
-api_key = os.getenv('GOOGLE_API_KEY')
-
-
 # Set up the AI embedding model
 embeddings = GoogleGenerativeAIEmbeddings(
   model= "gemini-embedding-001",
 )
 
 llm = ChatGoogleGenerativeAI(
-  model= "gemini-3.5-flash",
+  model= "gemini-3.7-flash",
   temperature = 0,
   max_retries = 2,
-  google_api_key = api_key,
 )
 
 
@@ -90,8 +87,6 @@ def load_and_split_urls(urls: List[str]):
 
 urls = [
   "https://simple.wikipedia.org/wiki/Photosynthesis",
-  "https://simple.wikipedia.org/wiki/Coffee",
-  "https://simple.wikipedia.org/wiki/Volcano",
 ]
 
 
@@ -124,7 +119,7 @@ except Exception as e:
 # Create the retriever
 retriever = vectorstore.as_retriever(
   search_type="similarity",
-  search_kwargs={"k": 4}
+  search_kwargs={"k": 2}
 )
 
 
@@ -169,7 +164,7 @@ app = workflow.compile()
 
 # Run
 inputs = {
-  "question": "Qual é a atividade exercida pela empresa GUARDADO & MARTINS, LDA?"
+  "question": "What substances are produced during photosynthesis?"
 }
 
 for output in app.stream(inputs):

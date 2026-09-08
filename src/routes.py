@@ -42,7 +42,7 @@ def rag_chain(llm):
      "Question: {question}\nContext: {context}\nAnswer:"),
   ])
 
-  return prompt | llm | StrOutputParser
+  return prompt | llm | StrOutputParser()
 
 
 ### Hallucination Grader-------------------------------------------
