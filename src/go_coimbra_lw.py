@@ -138,6 +138,7 @@ class GraphState(TypedDict):
   question: str
   generation: str
   documents: List[str]
+  re_write_counter: int
 
 
 # INITIALIZE NODES AND EDGES
@@ -162,13 +163,11 @@ workflow.add_conditional_edges(
     "generate": "generate",
   },
 )
-workflow.add_edge("transform_query", "retrieve")
 
 workflow.add_conditional_edges(
   "generate",
   partial(grade_generation_v_documents_and_question, llm),
   {
-    "not supported": "generate",
     "useful": END,
     "not useful": "transform_query",
   },

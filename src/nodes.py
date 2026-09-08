@@ -1,22 +1,5 @@
-from typing import List
-from typing_extensions import TypedDict
 from routes import rag_chain, retrieval_grader, question_rewriter
 
-
-# Data model
-class GraphState(TypedDict):
-  """
-  Represents the state of our graph.
-
-  Attributes:
-    question: question
-    generation: LLM generation
-    documents: list of documents
-  """
-
-  question: str
-  generation: str
-  documents: List[str]
 
 
 def retrieve(retriever, state):
