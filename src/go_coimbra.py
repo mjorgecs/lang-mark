@@ -3,9 +3,11 @@ from pprint import pprint
 from functools import partial
 from pathlib import Path
 from dotenv import load_dotenv
+from typing import List
 from langchain_chroma import Chroma
 from langgraph.graph import END, StateGraph, START
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
@@ -14,7 +16,7 @@ from edges import decide_to_generate, grade_generation_v_documents_and_question
 from nodes import retrieve, grade_documents, transform_query, generate, GraphState
 
 
-PDF_PATH = Path(__file__).parent.parent / "docs" / "go_coimbra" / "700-maiores-empresas-coimbra-2025-extended.pdf"
+PDF_PATH = Path(__file__).parent.parent / "docs" / "go_coimbra" / "700-maiores-empresas-coimbra-2025-tables.pdf"
 COLLECTIONS_PATH = Path(__file__).parent.parent / "collections"
 
 ### SETUP
@@ -26,7 +28,7 @@ api_key = os.getenv('GOOGLE_API_KEY')
 
 # Set up the AI embedding model
 embeddings = GoogleGenerativeAIEmbeddings(
-  model= "gemini-embedding-2",
+  model= "gemini-embedding-001",
 )
 
 llm = ChatGoogleGenerativeAI(
@@ -39,7 +41,7 @@ llm = ChatGoogleGenerativeAI(
 
 ### CREATE INDEX
 
-collection_name = "700-extended"
+collection_name = "wiki-articles"
 COLLECTIONS_PATH.mkdir(parents=True, exist_ok=True)
 
 
@@ -69,23 +71,48 @@ def load_and_split_pdf():
   return text_splitter.split_documents(pages)
 
 
+def load_and_split_urls(urls: List[str]):
+  """Load a list of URLs and split it into chunks. Only needed the first time we index."""
+
+  # docs is a list of lists: [[Document], [Document], [Document]]
+  docs = [WebBaseLoader(url).load() for url in urls]
+  docs_list = [item for sublist in docs for item in sublist]
+
+  # Split
+  text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=0
+  )
+
+  return text_splitter.split_documents(docs_list)
+
+
+
+urls = [
+  "https://simple.wikipedia.org/wiki/Photosynthesis",
+  "https://simple.wikipedia.org/wiki/Coffee",
+  "https://simple.wikipedia.org/wiki/Volcano",
+]
+
+
 # Open the ChromaDB, reusing the one on disk if we already indexed the PDF
 try:
 
   vectorstore = Chroma(
-    collection_name=collection_name,
-    embedding_function=embeddings,
-    persist_directory=str(COLLECTIONS_PATH),
+    collection_name = collection_name,
+    embedding_function = embeddings,
+    persist_directory = str(COLLECTIONS_PATH),
   )
 
   # An empty collection means we have never indexed the PDF into this directory
   if not vectorstore.get(limit=1)["ids"]:
     print("No existing index found, embedding the PDF (this spends API quota)...")
 
-    pages_split = load_and_split_pdf()
-    vectorstore.add_documents(pages_split)
+    docs_split = load_and_split_urls(urls)
 
-    print(f"Created ChromaDB vector store with {len(pages_split)} chunks!")
+    vectorstore.add_documents(docs_split)
+
+    print(f"Created ChromaDB vector store with {len(docs_split)} chunks!")
   else:
     print("Reusing the ChromaDB vector store already on disk, nothing to embed")
 
@@ -96,8 +123,8 @@ except Exception as e:
 
 # Create the retriever
 retriever = vectorstore.as_retriever(
-  search_type="similarity", # 'similarity' (default), 'mmr', or 'similarity_score_threshold'
-  search_kwargs={"k": 5} # K is the amount of chunks to return
+  search_type="similarity",
+  search_kwargs={"k": 4}
 )
 
 
@@ -142,7 +169,7 @@ app = workflow.compile()
 
 # Run
 inputs = {
-  "question": "What player at the Bears expected to draft first in the 2024 NFL draft?"
+  "question": "Qual é a atividade exercida pela empresa GUARDADO & MARTINS, LDA?"
 }
 
 for output in app.stream(inputs):
