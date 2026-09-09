@@ -58,7 +58,6 @@ def load_and_split_urls(urls: List[str]):
   return text_splitter.split_documents(docs_list)
 
 
-
 urls = [
   "https://simple.wikipedia.org/wiki/Photosynthesis",
 ]
@@ -73,7 +72,7 @@ try:
   )
 
   if not vectorstore.get(limit=1)["ids"]:
-    print("No existing index found, embedding the documents")
+    print("No existing index found, embedding documents")
 
     docs_split = load_and_split_urls(urls)
 
