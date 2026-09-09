@@ -17,7 +17,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
 from langlib.demo.nodes import retrieve, grade_documents, generate, transform_query
-from langlib.demo.edges import decide_to_generate, grade_generation_v_documents_and_question
+from rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question
 
 
 DB_PATH = Path(__file__).parent.parent / "db" / "rag_agent"

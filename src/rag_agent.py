@@ -16,8 +16,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
-from langlib.demo.nodes import retrieve, grade_documents, generate
-from test.rag_agent_lib_test import decide_to_generate, grade_generation, transform_query, cancel_query
+from langlib.demo.nodes import retrieve, grade_documents, generate, transform_query, cancel_query
+from langlib.demo.edges import decide_to_generate, grade_generation
 
 
 DB_PATH = Path(__file__).parent.parent / "db" / "rag_agent"
@@ -40,8 +40,7 @@ llm = ChatOpenAI(
 collection_name = "wiki-articles"
 DB_PATH.mkdir(parents=True, exist_ok=True)
 
-
-def load_and_split_urls(urls: List[str]):
+def load_and_tokenize_urls(urls: List[str]):
   """Load a list of URLs and split it into chunks. Only needed the first time we index."""
 
   # docs is a list of lists: [[Document], [Document], [Document]]
@@ -49,7 +48,7 @@ def load_and_split_urls(urls: List[str]):
   docs_list = [item for sublist in docs for item in sublist]
 
   # Split
-  text_splitter = RecursiveCharacterTextSplitter(
+  text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     chunk_size=500,
     chunk_overlap=0
   )
@@ -75,7 +74,7 @@ try:
   if not vectorstore.get(limit=1)["ids"]:
     print("No existing index found, embedding documents")
 
-    docs_split = load_and_split_urls(urls)
+    docs_split = load_and_tokenize_urls(urls)
 
     vectorstore.add_documents(docs_split)
 
@@ -177,13 +176,13 @@ while True:
       "counter": 0
     }
 
-    print("\n---⚙️\tRAG PROCESS STARTED\t⚙️---\n")
+    print("\n---⚙️  RAG PROCESS STARTED  ⚙️---\n")
 
     for output in app.stream(inputs):
       for key, value in output.items():
         print(f"Node '{key}':")
 
-    print("---⚙️\tRAG PROCESS ENDED\t⚙️---\n")
+    print("---⚙️  RAG PROCESS ENDED  ⚙️---\n")
 
     # Final generation
     print(f"🤖 RAG: {value["generation"]}")
