@@ -16,8 +16,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 
-from edges import decide_to_generate, grade_generation_v_documents_and_question
-from nodes import retrieve, grade_documents, transform_query, generate, GraphState
+from lib_lw import decide_to_generate, grade_generation_v_documents_and_question, transform_query
+from nodes import retrieve, grade_documents, generate
 
 
 PDF_PATH = Path(__file__).parent.parent / "docs" / "go_coimbra" / "700-maiores-empresas-coimbra-2025-tables.pdf"
@@ -133,12 +133,13 @@ class GraphState(TypedDict):
     question: question
     generation: LLM generation
     documents: list of documents
+    counter: number of query transformations performed
   """
 
   question: str
   generation: str
   documents: List[str]
-  re_write_counter: int
+  counter: int
 
 
 # INITIALIZE NODES AND EDGES
@@ -173,6 +174,7 @@ workflow.add_conditional_edges(
   },
 )
 
+workflow.add_edge("transform_query", "retrieve")
 
 # Compile
 app = workflow.compile()
@@ -180,7 +182,8 @@ app = workflow.compile()
 
 # Run
 inputs = {
-  "question": "What substances are produced during photosynthesis?"
+  "question": "What substances are produced during photosynthesis?",
+  "counter": 0
 }
 
 for output in app.stream(inputs):
