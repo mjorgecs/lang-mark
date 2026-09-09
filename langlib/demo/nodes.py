@@ -1,3 +1,4 @@
+from langlib.demo.formatting import format_docs
 from langlib.demo.routes import rag_chain, retrieval_grader, question_rewriter
 
 
@@ -92,5 +93,5 @@ def generate(llm, state):
   chain = rag_chain(llm)
 
   # RAG generation
-  generation = chain.invoke({"context": documents, "question": question})
+  generation = chain.invoke({"context": format_docs(documents), "question": question})
   return {"documents": documents, "question": question, "generation": generation}
