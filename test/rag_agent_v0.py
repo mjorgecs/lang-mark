@@ -1,7 +1,19 @@
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-env_path = Path(__file__).resolve().parents[1] / ".env"
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+
+# Put the repo root on sys.path so `langlib.*` resolves, and this directory so
+# the sibling `rag_agent_lib_test` resolves, however the script is launched.
+# PYTHONPATH in .env cannot do this: load_dotenv runs after the interpreter has
+# already built sys.path.
+for _path in (ROOT, HERE):
+  if str(_path) not in sys.path:
+    sys.path.insert(0, str(_path))
+
+env_path = ROOT / ".env"
 
 if not load_dotenv(dotenv_path=env_path):
   raise RuntimeError(f"no .env found at {env_path}")
@@ -16,11 +28,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
-from langlib.demo.nodes import retrieve, grade_documents, generate, transform_query
-from rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question
+from langlib.demo.nodes import retrieve, grade_documents, generate
+from rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question, transform_query
 
 
-DB_PATH = Path(__file__).parent.parent / "db" / "rag_agent"
+DB_PATH = ROOT / "db" / "rag_agent"
 
 ### SETUP
 
@@ -159,7 +171,7 @@ while True:
   user_input = input("🤠 USER: ").strip()
 
   if user_input.lower() in ("quit", "exit"):
-    print("\n======FINNISH SESSION=======")
+    print("\n======FINISH SESSION=======")
     break
 
   if not user_input:

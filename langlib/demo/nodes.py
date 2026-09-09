@@ -25,7 +25,7 @@ def retrieve(retriever, state):
 
 def grade_documents(llm, state):
   """
-  Determines wether the retrieved documents are relevant to the question.
+  Determines whether the retrieved documents are relevant to the question.
 
   Args:
     state (dict): The current graph state
@@ -34,7 +34,7 @@ def grade_documents(llm, state):
     state (dict): Updates documents key with only filtered relevant documents
   """
 
-  print("---CHECK DUCUMENT RELEVANCE TO QUESTION---")
+  print("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
   question = state["question"]
   documents = state["documents"]
 
