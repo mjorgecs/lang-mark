@@ -7,7 +7,6 @@ if not load_dotenv(dotenv_path=env_path):
   raise RuntimeError(f"no .env found at {env_path}")
 
 from typing import List
-from pprint import pprint
 from functools import partial
 from langchain_chroma import Chroma
 from typing_extensions import TypedDict
@@ -18,7 +17,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
 from langlib.demo.nodes import retrieve, grade_documents, generate
-from test.rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question, transform_query
+from test.rag_agent_lib_test import decide_to_generate, grade_generation, transform_query, cancel_query
 
 
 DB_PATH = Path(__file__).parent.parent / "db" / "rag_agent"
@@ -60,6 +59,8 @@ def load_and_split_urls(urls: List[str]):
 
 urls = [
   "https://simple.wikipedia.org/wiki/Photosynthesis",
+  "https://simple.wikipedia.org/wiki/Coffee",
+  "https://simple.wikipedia.org/wiki/Volcano"
 ]
 
 
@@ -121,6 +122,7 @@ workflow.add_node("retrieve", partial(retrieve, retriever))
 workflow.add_node("generate", partial(generate, llm))
 workflow.add_node("transform_query", partial(transform_query, llm))
 workflow.add_node("grade_documents", partial(grade_documents, llm))
+workflow.add_node("cancel_query", cancel_query)
 
 # Build graph
 workflow.add_edge(START, "retrieve")
@@ -132,36 +134,60 @@ workflow.add_conditional_edges(
   decide_to_generate,
   {
     "transform_query": "transform_query",
+    "cancel": "cancel_query",
     "generate": "generate",
   },
 )
 
 workflow.add_conditional_edges(
   "generate",
-  partial(grade_generation_v_documents_and_question, llm),
+  partial(grade_generation, llm),
   {
     "useful": END,
+    "cancel": "cancel_query",
     "not useful": "transform_query",
   },
 )
 
 workflow.add_edge("transform_query", "retrieve")
 
+workflow.add_edge("cancel_query", END)
+
 # Compile
 app = workflow.compile()
 
 
 # Run
-inputs = {
-  "question": "What substances are produced during photosynthesis?",
-  "counter": 0
-}
+print("\n======BEGIN SESSION=======\n")
 
-for output in app.stream(inputs):
-  for key, value in output.items():
-    # Node
-    pprint(f"Node '{key}':")
-  pprint("\n---\n")
+while True:
+  user_input = input("🤠 USER: ").strip()
 
-# Final generation
-pprint(value["generation"])
+  if user_input.lower() in ("quit", "exit"):
+    print("\n======FINNISH SESSION=======")
+    break
+
+  if not user_input:
+    continue
+
+  try:
+
+    inputs = {
+      "question": user_input,
+      "counter": 0
+    }
+
+    print("\n---⚙️\tRAG PROCESS STARTED\t⚙️---\n")
+
+    for output in app.stream(inputs):
+      for key, value in output.items():
+        print(f"Node '{key}':")
+
+    print("---⚙️\tRAG PROCESS ENDED\t⚙️---\n")
+
+    # Final generation
+    print(f"🤖 RAG: {value["generation"]}")
+
+  except Exception as e:
+    print(f"\nError calling the model: {e}\n")
+    continue

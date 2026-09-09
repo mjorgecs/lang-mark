@@ -7,7 +7,6 @@ if not load_dotenv(dotenv_path=env_path):
   raise RuntimeError(f"no .env found at {env_path}")
 
 from typing import List
-from pprint import pprint
 from functools import partial
 from langchain_chroma import Chroma
 from typing_extensions import TypedDict
@@ -61,6 +60,8 @@ def load_and_tokenize_urls(urls: List[str]):
 
 urls = [
   "https://simple.wikipedia.org/wiki/Photosynthesis",
+  "https://simple.wikipedia.org/wiki/Coffee",
+  "https://simple.wikipedia.org/wiki/Volcano"
 ]
 
 
@@ -152,15 +153,35 @@ app = workflow.compile()
 
 
 # Run
-inputs = {
-  "question": "What substances are produced during photosynthesis?"
-}
+print("\n======BEGIN SESSION=======\n")
 
-for output in app.stream(inputs):
-  for key, value in output.items():
-    # Node
-    pprint(f"Node '{key}':")
-  pprint("\n---\n")
+while True:
+  user_input = input("🤠 USER: ").strip()
 
-# Final generation
-pprint(value["generation"])
+  if user_input.lower() in ("quit", "exit"):
+    print("\n======FINNISH SESSION=======")
+    break
+
+  if not user_input:
+    continue
+
+  try:
+
+    inputs = {
+      "question": user_input
+    }
+
+    print("\n---⚙️ RAG PROCESS STARTED ⚙️---\n")
+
+    for output in app.stream(inputs):
+      for key, value in output.items():
+        print(f"Node '{key}':")
+
+    print("---⚙️ RAG PROCESS ENDED⚙️---\n")
+
+    # Final generation
+    print(f"🤖 RAG: {value["generation"]}")
+
+  except Exception as e:
+    print(f"\nError calling the model: {e}\n")
+    continue

@@ -2,9 +2,10 @@ from langlib.demo.routes import answer_grader
 from langlib.demo.routes import question_rewriter
 
 
-MAX_RE_WRITING = 3
+MAX_REWRITES = 3
+DEFAULT_ANSWER = "I don't have enough information to address your question."
 
-def grade_generation_v_documents_and_question(llm, state):
+def grade_generation(llm, state):
   """
   Determines whether the generation is grounded in the document and answers question.
 
@@ -24,9 +25,14 @@ def grade_generation_v_documents_and_question(llm, state):
   score = ans_grader.invoke({"question": question, "generation": generation})
   grade = score.binary_score
 
-  if grade == "yes" or counter >= MAX_RE_WRITING:
+  if grade == "yes":
     print("---DECISION: GENERATION ADDRESSES QUESTION---")
     return "useful"
+
+  elif counter >= MAX_REWRITES:
+    print("---DECISION: CANNOT ADDRESS QUESTION---")
+    return "cancel"
+
   else:
     print("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
     return "not useful"
@@ -48,19 +54,23 @@ def decide_to_generate(state):
   filtered_documents = state["documents"]
   counter = state["counter"]
 
-  if not filtered_documents and counter < MAX_RE_WRITING:
-    # All documents have been filtered check_relevance
+
+  if filtered_documents:
+    # We have relevant documents, so generate answer
+    print("---DECISION: GENERATE---")
+    return "generate"
+
+  elif counter >= MAX_REWRITES:
+    # Maximum number of query transformations reached, cancel the query
+    print("---DECISION: CANNOT ADDRESS QUESTION---")
+    return "cancel"
+
+  else:
     # We will re-generate a new query
     print(
       "---DECISION: ALL DOCUMENTS ARE NOT RELEVANT TO QUESTION, TRANSFORM QUERY---"
     )
     return "transform_query"
-
-  else:
-    # We have relevant documents, so generate answer
-    print("---DECISION: GENERATE---")
-
-    return "generate"
 
 
 def transform_query(llm, state):
@@ -84,3 +94,9 @@ def transform_query(llm, state):
   # Re-write question
   better_question = quest_re.invoke({"question": question})
   return {"documents": documents, "question": better_question, "counter": counter+1}
+
+
+def cancel_query(state):
+  """Replace the generation with a fallback answer after exhausting rewrites."""
+  print("---CANCEL: RETURNING DEFAULT ANSWER---")
+  return {"generation": DEFAULT_ANSWER}
