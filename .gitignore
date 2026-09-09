@@ -4,11 +4,10 @@
 env/
 venv/
 
-# vscode
-.vscode/
-
 # database
 db/
+
+__pycache__/
 
 # others
 .DS_Store

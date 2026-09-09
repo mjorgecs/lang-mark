@@ -5,32 +5,31 @@ from langlib.demo.routes import question_rewriter
 MAX_RE_WRITING = 3
 
 def grade_generation_v_documents_and_question(llm, state):
-    """
-    Determines whether the generation is grounded in the document and answers question.
+  """
+  Determines whether the generation is grounded in the document and answers question.
 
-    Args:
-      state (dict): The current graph state
+  Args:
+    state (dict): The current graph state
 
-    Returns:
-      str: Decision for next node to call
-    """
+  Returns:
+    str: Decision for next node to call
+  """
 
-    print("---CHECK HALLUCINATIONS---")
-    question = state["question"]
-    generation = state["generation"]
-    counter = state["counter"]
+  question = state["question"]
+  generation = state["generation"]
+  counter = state["counter"]
 
-    ans_grader = answer_grader(llm)
+  ans_grader = answer_grader(llm)
 
-    score = ans_grader.invoke({"question": question, "generation": generation})
-    grade = score.binary_score
+  score = ans_grader.invoke({"question": question, "generation": generation})
+  grade = score.binary_score
 
-    if grade == "yes" or counter >= MAX_RE_WRITING:
-      print("---DECISION: GENERATION ADDRESSES QUESTION---")
-      return "useful"
-    else:
-      print("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
-      return "not useful"
+  if grade == "yes" or counter >= MAX_RE_WRITING:
+    print("---DECISION: GENERATION ADDRESSES QUESTION---")
+    return "useful"
+  else:
+    print("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
+    return "not useful"
 
 # ----------------
 
