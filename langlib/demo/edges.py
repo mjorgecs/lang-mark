@@ -1,4 +1,4 @@
-from routes import answer_grader, hallucination_grader
+from langlib.demo.routes import answer_grader, hallucination_grader
 
 
 def decide_to_generate(state):

@@ -1,5 +1,4 @@
-from routes import rag_chain, retrieval_grader, question_rewriter
-
+from langlib.demo.routes import rag_chain, retrieval_grader, question_rewriter
 
 
 def retrieve(retriever, state):

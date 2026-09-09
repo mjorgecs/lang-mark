@@ -1,5 +1,5 @@
-from routes import answer_grader
-from routes import question_rewriter
+from langlib.demo.routes import answer_grader
+from langlib.demo.routes import question_rewriter
 
 
 MAX_RE_WRITING = 3
@@ -24,7 +24,7 @@ def grade_generation_v_documents_and_question(llm, state):
 
     score = ans_grader.invoke({"question": question, "generation": generation})
     grade = score.binary_score
-    
+
     if grade == "yes" or counter >= MAX_RE_WRITING:
       print("---DECISION: GENERATION ADDRESSES QUESTION---")
       return "useful"

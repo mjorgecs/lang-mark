@@ -1,5 +1,0 @@
-LangGraph repo = https://github.com/langchain-ai/langgraph/blob/main/examples/rag/langgraph_self_rag_pinecone_movies.ipynb
-
-LangGraph Course repo = https://github.com/iamvaibhavmehra/LangGraph-Course-freeCodeCamp/blob/main/Agents/RAG_Agent.py
-
-rag_from_scratch repo = https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_15_to_18.ipynb

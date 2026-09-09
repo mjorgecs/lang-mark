@@ -1,11 +1,14 @@
-# Environments
+# environments
 .env
 .venv
 env/
 venv/
 
+# vscode
+.vscode/
 
+# database
+db/
+
+# others
 .DS_Store
-
-# Folders
-go_coimbra/

@@ -16,11 +16,10 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 
-from lib_lw import decide_to_generate, grade_generation_v_documents_and_question, transform_query
-from nodes import retrieve, grade_documents, generate
+from test.rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question, transform_query
+from langlib.demo.nodes import retrieve, grade_documents, generate
 
 
-PDF_PATH = Path(__file__).parent.parent / "docs" / "go_coimbra" / "700-maiores-empresas-coimbra-2025-tables.pdf"
 COLLECTIONS_PATH = Path(__file__).parent.parent / "collections"
 
 ### SETUP

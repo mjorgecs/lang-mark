@@ -16,8 +16,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 
-from edges import decide_to_generate, grade_generation_v_documents_and_question
-from nodes import retrieve, grade_documents, transform_query, generate, GraphState
+from langlib.demo.edges import decide_to_generate, grade_generation_v_documents_and_question
+from langlib.demo.nodes import retrieve, grade_documents, transform_query, generate, GraphState
 
 
 PDF_PATH = Path(__file__).parent.parent / "docs" / "go_coimbra" / "700-maiores-empresas-coimbra-2025-tables.pdf"
