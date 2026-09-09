@@ -1,11 +1,13 @@
-# Environments
+# environments
 .env
 .venv
 env/
 venv/
 
+# database
+db/
 
+__pycache__/
+
+# others
 .DS_Store
-
-# Folders
-go_coimbra/

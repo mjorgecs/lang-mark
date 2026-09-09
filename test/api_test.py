@@ -1,17 +1,20 @@
-import os
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from pathlib import Path
 
-load_dotenv()
+env_path = Path(__file__).resolve().parents[1] / ".env"
 
-api_key = os.getenv('GOOGLE_API_KEY')
+if not load_dotenv(dotenv_path=env_path):
+  raise RuntimeError(f"no .env found at {env_path}")
 
-llm = ChatGoogleGenerativeAI(
-  model= "gemini-3.5-flash",
-  temperature = 0.0,
-  max_retries = 2,
-  google_api_key = api_key,
+from langchain_openai import ChatOpenAI
+
+
+
+llm = ChatOpenAI(
+  model="gpt-5-mini",
+  temperature=3
 )
+
 
 print("\n======BEGIN SESSION=======\n")
 

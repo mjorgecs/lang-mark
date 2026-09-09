@@ -1,22 +1,5 @@
-from typing import List
-from typing_extensions import TypedDict
-from routes import rag_chain, retrieval_grader, question_rewriter
-
-
-# Data model
-class GraphState(TypedDict):
-  """
-  Represents the state of our graph.
-
-  Attributes:
-    question: question
-    generation: LLM generation
-    documents: list of documents
-  """
-
-  question: str
-  generation: str
-  documents: List[str]
+from langlib.demo.formatting import format_docs
+from langlib.demo.routes import rag_chain, retrieval_grader, question_rewriter
 
 
 def retrieve(retriever, state):
@@ -110,5 +93,5 @@ def generate(llm, state):
   chain = rag_chain(llm)
 
   # RAG generation
-  generation = chain.invoke({"context": documents, "question": question})
+  generation = chain.invoke({"context": format_docs(documents), "question": question})
   return {"documents": documents, "question": question, "generation": generation}

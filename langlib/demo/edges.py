@@ -1,4 +1,5 @@
-from routes import answer_grader, hallucination_grader
+from langlib.demo.formatting import format_docs
+from langlib.demo.routes import answer_grader, hallucination_grader
 
 
 def decide_to_generate(state):
@@ -49,7 +50,7 @@ def grade_generation_v_documents_and_question(llm, state):
     ans_grader = answer_grader(llm)
 
     score = hallu_grader.invoke(
-      {"documents": documents, "generation": generation}
+      {"documents": format_docs(documents), "generation": generation}
     )
     grade = score.binary_score
 
