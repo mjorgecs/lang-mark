@@ -1,6 +1,6 @@
 from langlib.demo.routes import answer_grader
 
-MAX_REWRITES = 3
+MAX_REWRITES = 2
 
 def grade_generation(llm, state):
   """

@@ -12,7 +12,7 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
   model="gpt-5-mini",
-  temperature=3
+  temperature=1
 )
 
 

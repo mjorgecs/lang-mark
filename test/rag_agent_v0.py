@@ -2,16 +2,10 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent
+ROOT = Path(__file__).resolve().parents[1]
 
-# Put the repo root on sys.path so `langlib.*` resolves, and this directory so
-# the sibling `rag_agent_lib_test` resolves, however the script is launched.
-# PYTHONPATH in .env cannot do this: load_dotenv runs after the interpreter has
-# already built sys.path.
-for _path in (ROOT, HERE):
-  if str(_path) not in sys.path:
-    sys.path.insert(0, str(_path))
+if str(ROOT) not in sys.path:
+  sys.path.insert(0, str(ROOT))
 
 env_path = ROOT / ".env"
 

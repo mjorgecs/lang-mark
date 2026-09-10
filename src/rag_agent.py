@@ -4,12 +4,6 @@ from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Put the repo root on sys.path so `langlib.*` resolves however the script is
-# launched. PYTHONPATH in .env cannot do this: load_dotenv runs after the
-# interpreter has already built sys.path.
-if str(ROOT) not in sys.path:
-  sys.path.insert(0, str(ROOT))
-
 env_path = ROOT / ".env"
 
 if not load_dotenv(dotenv_path=env_path):
@@ -38,8 +32,13 @@ embeddings = OpenAIEmbeddings(
   model= "text-embedding-3-small"
 )
 
-llm = ChatOpenAI(
-  model= "gpt-5-mini",
+reasoning_llm = ChatOpenAI(
+  model= "gpt-5-nano",
+  reasoning_effort="minimal"
+)
+
+grader_llm = ChatOpenAI(
+  model= "gpt-4.1-nano",
   temperature = 0,
 )
 
@@ -127,9 +126,9 @@ class GraphState(TypedDict):
 workflow = StateGraph(GraphState)
 
 workflow.add_node("retrieve", partial(retrieve, retriever))
-workflow.add_node("generate", partial(generate, llm))
-workflow.add_node("transform_query", partial(transform_query, llm))
-workflow.add_node("grade_documents", partial(grade_documents, llm))
+workflow.add_node("generate", partial(generate, reasoning_llm))
+workflow.add_node("transform_query", partial(transform_query, reasoning_llm))
+workflow.add_node("grade_documents", partial(grade_documents, grader_llm))
 workflow.add_node("cancel_query", cancel_query)
 
 # Build graph
@@ -149,7 +148,7 @@ workflow.add_conditional_edges(
 
 workflow.add_conditional_edges(
   "generate",
-  partial(grade_generation, llm),
+  partial(grade_generation, grader_llm),
   {
     "useful": END,
     "cancel": "cancel_query",
