@@ -192,7 +192,7 @@ while True:
     print("---⚙️  RAG PROCESS ENDED  ⚙️---\n")
 
     # Final generation
-    print(f"🤖 RAG: {value["generation"]}")
+    print(f"🤖 AI: {value["generation"]}")
 
   except Exception as e:
     print(f"\nError calling the model: {e}\n")
