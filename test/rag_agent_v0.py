@@ -1,13 +1,18 @@
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-env_path = Path(__file__).resolve().parents[1] / ".env"
+ROOT = Path(__file__).resolve().parents[1]
+
+if str(ROOT) not in sys.path:
+  sys.path.insert(0, str(ROOT))
+
+env_path = ROOT / ".env"
 
 if not load_dotenv(dotenv_path=env_path):
   raise RuntimeError(f"no .env found at {env_path}")
 
 from typing import List
-from pprint import pprint
 from functools import partial
 from langchain_chroma import Chroma
 from typing_extensions import TypedDict
@@ -18,10 +23,10 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
 from langlib.demo.nodes import retrieve, grade_documents, generate
-from test.rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question, transform_query
+from rag_agent_lib_test import decide_to_generate, grade_generation_v_documents_and_question, transform_query
 
 
-DB_PATH = Path(__file__).parent.parent / "db" / "rag_agent"
+DB_PATH = ROOT / "db" / "rag_agent"
 
 ### SETUP
 
@@ -36,13 +41,14 @@ llm = ChatOpenAI(
 )
 
 
+
 ### CREATE INDEX
 
 collection_name = "wiki-articles"
 DB_PATH.mkdir(parents=True, exist_ok=True)
 
 
-def load_and_split_urls(urls: List[str]):
+def load_and_tokenize_urls(urls: List[str]):
   """Load a list of URLs and split it into chunks. Only needed the first time we index."""
 
   # docs is a list of lists: [[Document], [Document], [Document]]
@@ -50,7 +56,7 @@ def load_and_split_urls(urls: List[str]):
   docs_list = [item for sublist in docs for item in sublist]
 
   # Split
-  text_splitter = RecursiveCharacterTextSplitter(
+  text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     chunk_size=500,
     chunk_overlap=0
   )
@@ -60,6 +66,8 @@ def load_and_split_urls(urls: List[str]):
 
 urls = [
   "https://simple.wikipedia.org/wiki/Photosynthesis",
+  "https://simple.wikipedia.org/wiki/Coffee",
+  "https://simple.wikipedia.org/wiki/Volcano"
 ]
 
 
@@ -74,7 +82,7 @@ try:
   if not vectorstore.get(limit=1)["ids"]:
     print("No existing index found, embedding documents")
 
-    docs_split = load_and_split_urls(urls)
+    docs_split = load_and_tokenize_urls(urls)
 
     vectorstore.add_documents(docs_split)
 
@@ -93,8 +101,8 @@ retriever = vectorstore.as_retriever(
   search_kwargs={"k": 2}
 )
 
-# --- LLM
 
+# --- LLM
 # Data model
 class GraphState(TypedDict):
   """
@@ -104,13 +112,11 @@ class GraphState(TypedDict):
     question: question
     generation: LLM generation
     documents: list of documents
-    counter: number of query transformations performed
   """
 
   question: str
   generation: str
   documents: List[str]
-  counter: int
 
 
 # INITIALIZE NODES AND EDGES
@@ -135,33 +141,53 @@ workflow.add_conditional_edges(
     "generate": "generate",
   },
 )
+workflow.add_edge("transform_query", "retrieve")
 
 workflow.add_conditional_edges(
   "generate",
   partial(grade_generation_v_documents_and_question, llm),
   {
+    "not supported": "generate",
     "useful": END,
     "not useful": "transform_query",
   },
 )
 
-workflow.add_edge("transform_query", "retrieve")
 
 # Compile
 app = workflow.compile()
 
 
 # Run
-inputs = {
-  "question": "What substances are produced during photosynthesis?",
-  "counter": 0
-}
+print("\n======BEGIN SESSION=======\n")
 
-for output in app.stream(inputs):
-  for key, value in output.items():
-    # Node
-    pprint(f"Node '{key}':")
-  pprint("\n---\n")
+while True:
+  user_input = input("🤠 USER: ").strip()
 
-# Final generation
-pprint(value["generation"])
+  if user_input.lower() in ("quit", "exit"):
+    print("\n======FINISH SESSION=======")
+    break
+
+  if not user_input:
+    continue
+
+  try:
+
+    inputs = {
+      "question": user_input
+    }
+
+    print("\n---⚙️ RAG PROCESS STARTED ⚙️---\n")
+
+    for output in app.stream(inputs):
+      for key, value in output.items():
+        print(f"Node '{key}':")
+
+    print("---⚙️ RAG PROCESS ENDED⚙️---\n")
+
+    # Final generation
+    print(f"🤖 RAG: {value["generation"]}")
+
+  except Exception as e:
+    print(f"\nError calling the model: {e}\n")
+    continue

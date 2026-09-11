@@ -1,6 +1,8 @@
 from langlib.demo.formatting import format_docs
 from langlib.demo.routes import rag_chain, retrieval_grader, question_rewriter
 
+DEFAULT_ANSWER = "I don't have enough information to address your question."
+
 
 def retrieve(retriever, state):
   """
@@ -23,7 +25,7 @@ def retrieve(retriever, state):
 
 def grade_documents(llm, state):
   """
-  Determines wether the retrieved documents are relevant to the question.
+  Determines whether the retrieved documents are relevant to the question.
 
   Args:
     state (dict): The current graph state
@@ -32,7 +34,7 @@ def grade_documents(llm, state):
     state (dict): Updates documents key with only filtered relevant documents
   """
 
-  print("---CHECK DUCUMENT RELEVANCE TO QUESTION---")
+  print("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
   question = state["question"]
   documents = state["documents"]
 
@@ -54,28 +56,6 @@ def grade_documents(llm, state):
   return {"documents": filtered_docs, "question": question}
 
 
-def transform_query(llm, state):
-  """
-  Transform the query to produce a better question.
-
-  Args:
-    state (dict): The current graph state
-
-  Returns:
-    state (dict): Updates question key with a re-phrased question
-  """
-
-  print("---TRANSFORM QUERY---")
-  question = state["question"]
-  documents = state["documents"]
-
-  quest_re = question_rewriter(llm)
-
-  # Re-write question
-  better_question = quest_re.invoke({"question": question})
-  return {"documents": documents, "question": better_question}
-
-
 def generate(llm, state):
   """
   Generate answer
@@ -95,3 +75,33 @@ def generate(llm, state):
   # RAG generation
   generation = chain.invoke({"context": format_docs(documents), "question": question})
   return {"documents": documents, "question": question, "generation": generation}
+
+
+def cancel_query(state):
+  """Replace the generation with a fallback answer after exhausting rewrites."""
+  print("---CANCEL: RETURNING DEFAULT ANSWER---")
+  return {"generation": DEFAULT_ANSWER}
+
+
+def transform_query(llm, state):
+  """
+  Transform the query to produce a better question.
+
+  Args:
+    state (dict): The current graph state
+
+  Returns:
+    state (dict): Updates question key with a re-phrased question and increase the counter
+  """
+
+  print("---TRANSFORM QUERY---")
+  question = state["question"]
+  documents = state["documents"]
+  counter = state.get("counter", 0)
+
+  quest_re = question_rewriter(llm)
+
+  # Re-write question
+  better_question = quest_re.invoke({"question": question})
+  return {"documents": documents, "question": better_question, "counter": counter+1}
+

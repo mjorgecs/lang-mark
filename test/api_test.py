@@ -12,7 +12,7 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
   model="gpt-5-mini",
-  temperature=3
+  temperature=1
 )
 
 
@@ -22,7 +22,7 @@ while True:
   user_input = input("🤠 USER: ").strip()
 
   if user_input.lower() in ("quit", "exit"):
-    print("\n======FINNISH SESSION=======")
+    print("\n======FINISH SESSION=======")
     break
   if not user_input:
     continue

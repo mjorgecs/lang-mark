@@ -1,13 +1,15 @@
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-env_path = Path(__file__).resolve().parents[1] / ".env"
+ROOT = Path(__file__).resolve().parents[1]
+
+env_path = ROOT / ".env"
 
 if not load_dotenv(dotenv_path=env_path):
   raise RuntimeError(f"no .env found at {env_path}")
 
 from typing import List
-from pprint import pprint
 from functools import partial
 from langchain_chroma import Chroma
 from typing_extensions import TypedDict
@@ -17,11 +19,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
-from langlib.demo.nodes import retrieve, grade_documents, generate, transform_query
-from langlib.demo.edges import decide_to_generate, grade_generation_v_documents_and_question
+from langlib.demo.nodes import retrieve, grade_documents, generate, transform_query, cancel_query
+from langlib.demo.edges import decide_to_generate, grade_generation
 
 
-DB_PATH = Path(__file__).parent.parent / "db" / "rag_agent"
+DB_PATH = ROOT / "db" / "rag_agent"
 
 ### SETUP
 
@@ -30,18 +32,21 @@ embeddings = OpenAIEmbeddings(
   model= "text-embedding-3-small"
 )
 
-llm = ChatOpenAI(
-  model= "gpt-5-mini",
-  temperature = 0,
+reasoning_llm = ChatOpenAI(
+  model= "gpt-5-nano",
+  reasoning_effort="minimal"
 )
 
+grader_llm = ChatOpenAI(
+  model= "gpt-4.1-nano",
+  temperature = 0,
+)
 
 
 ### CREATE INDEX
 
 collection_name = "wiki-articles"
 DB_PATH.mkdir(parents=True, exist_ok=True)
-
 
 def load_and_tokenize_urls(urls: List[str]):
   """Load a list of URLs and split it into chunks. Only needed the first time we index."""
@@ -61,6 +66,8 @@ def load_and_tokenize_urls(urls: List[str]):
 
 urls = [
   "https://simple.wikipedia.org/wiki/Photosynthesis",
+  "https://simple.wikipedia.org/wiki/Coffee",
+  "https://simple.wikipedia.org/wiki/Volcano"
 ]
 
 
@@ -94,8 +101,8 @@ retriever = vectorstore.as_retriever(
   search_kwargs={"k": 2}
 )
 
-
 # --- LLM
+
 # Data model
 class GraphState(TypedDict):
   """
@@ -105,11 +112,13 @@ class GraphState(TypedDict):
     question: question
     generation: LLM generation
     documents: list of documents
+    counter: number of query transformations performed
   """
 
   question: str
   generation: str
   documents: List[str]
+  counter: int
 
 
 # INITIALIZE NODES AND EDGES
@@ -117,9 +126,10 @@ class GraphState(TypedDict):
 workflow = StateGraph(GraphState)
 
 workflow.add_node("retrieve", partial(retrieve, retriever))
-workflow.add_node("generate", partial(generate, llm))
-workflow.add_node("transform_query", partial(transform_query, llm))
-workflow.add_node("grade_documents", partial(grade_documents, llm))
+workflow.add_node("generate", partial(generate, reasoning_llm))
+workflow.add_node("transform_query", partial(transform_query, reasoning_llm))
+workflow.add_node("grade_documents", partial(grade_documents, grader_llm))
+workflow.add_node("cancel_query", cancel_query)
 
 # Build graph
 workflow.add_edge(START, "retrieve")
@@ -131,36 +141,60 @@ workflow.add_conditional_edges(
   decide_to_generate,
   {
     "transform_query": "transform_query",
+    "cancel": "cancel_query",
     "generate": "generate",
   },
 )
-workflow.add_edge("transform_query", "retrieve")
 
 workflow.add_conditional_edges(
   "generate",
-  partial(grade_generation_v_documents_and_question, llm),
+  partial(grade_generation, grader_llm),
   {
-    "not supported": "generate",
     "useful": END,
+    "cancel": "cancel_query",
     "not useful": "transform_query",
   },
 )
 
+workflow.add_edge("transform_query", "retrieve")
+
+workflow.add_edge("cancel_query", END)
 
 # Compile
 app = workflow.compile()
 
 
 # Run
-inputs = {
-  "question": "What substances are produced during photosynthesis?"
-}
+print("\n======BEGIN SESSION=======\n")
 
-for output in app.stream(inputs):
-  for key, value in output.items():
-    # Node
-    pprint(f"Node '{key}':")
-  pprint("\n---\n")
+while True:
+  user_input = input("🤠 USER: ").strip()
 
-# Final generation
-pprint(value["generation"])
+  if user_input.lower() in ("quit", "exit"):
+    print("\n======FINISH SESSION=======")
+    break
+
+  if not user_input:
+    continue
+
+  try:
+
+    inputs = {
+      "question": user_input,
+      "counter": 0
+    }
+
+    print("\n---⚙️  RAG PROCESS STARTED  ⚙️---\n")
+
+    for output in app.stream(inputs):
+      for key, value in output.items():
+        print(f"Node '{key}':")
+
+    print("---⚙️  RAG PROCESS ENDED  ⚙️---\n")
+
+    # Final generation
+    print(f"🤖 RAG: {value["generation"]}")
+
+  except Exception as e:
+    print(f"\nError calling the model: {e}\n")
+    continue
